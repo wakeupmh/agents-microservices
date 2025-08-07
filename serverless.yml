@@ -1,0 +1,61 @@
+service: medical-strands-agent
+
+frameworkVersion: '3'
+useDotenv: true
+
+package:
+  individually: true
+
+plugins:
+  - serverless-python-requirements # Install python requirements
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - bedrock:InvokeModel
+        - dynamodb:Query
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - events:PutEvents
+      Resource: "*"
+
+functions:
+  medicalAgent:
+    handler: src.agents.medical_agent.handler.medical_analysis
+    timeout: 300
+    events:
+      - eventBridge:
+          pattern:
+            source: ["aws.s3"]
+            detail:
+              eventSource: ["s3.amazonaws.com"]
+              eventName: ["ObjectCreated:Put"]
+    package:
+      include:
+        - "src/agents/medical_agent/**"
+        - "src/tools/**"
+
+resources:
+  Resources:
+    MedicalMemoryTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: medical-agent-memory
+        AttributeDefinitions:
+          - AttributeName: patient_id
+            AttributeType: S
+          - AttributeName: record_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: patient_id
+            KeyType: HASH
+          - AttributeName: record_id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
