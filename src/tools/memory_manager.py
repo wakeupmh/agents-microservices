@@ -1,6 +1,6 @@
 import boto3
 from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 def get_patient_memory(patient_id: str, days_back: int = 90) -> Dict[str, Any]:
     """

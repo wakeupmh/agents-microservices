@@ -1,13 +1,10 @@
 service: medical-strands-agent
 
-frameworkVersion: '3'
+frameworkVersion: '4.18'
 useDotenv: true
 
 package:
   individually: true
-
-plugins:
-  - serverless-python-requirements # Install python requirements
 
 provider:
   name: aws
@@ -59,3 +56,5 @@ resources:
         TimeToLiveSpecification:
           AttributeName: ttl
           Enabled: true
+plugins:
+  - serverless-python-requirements
