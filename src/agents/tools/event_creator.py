@@ -5,22 +5,21 @@ from typing import Dict, Any
 
 def create_event(event_type: str, patient_id: str, specialist: str, urgency: str, reasoning: str) -> Dict[str, Any]:
     """
-    Tool para criar eventos médicos no EventBridge
+    Tool for creating events in EventBridge
     
     Args:
-        event_type: Tipo do evento (appointment, alert, review)
-        patient_id: ID do paciente
-        specialist: Especialista recomendado
-        urgency: Nível de urgência (routine, priority, urgent)
-        reasoning: Justificativa da decisão
+        event_type: Event type (appointment, alert, review)
+        patient_id: Patient ID
+        specialist: Recommended specialist
+        urgency: Urgency level (routine, priority, urgent)
+        reasoning: Justification for the decision
     
     Returns:
-        Dict com status da operação
+        Dict with operation status
     """
     eventbridge = boto3.client('events')
     
     try:
-        # Estrutura do evento médico
         event_detail = {
             'patient_id': patient_id,
             'event_type': event_type,
@@ -31,14 +30,12 @@ def create_event(event_type: str, patient_id: str, specialist: str, urgency: str
             'source': 'medical_agent'
         }
         
-        # Determinar tipo de evento EventBridge baseado na urgência
         detail_type_map = {
             'urgent': 'Medical Emergency Alert',
             'priority': 'Medical Priority Appointment',
             'routine': 'Medical Routine Appointment'
         }
         
-        # Enviar evento
         response = eventbridge.put_events(
             Entries=[
                 {

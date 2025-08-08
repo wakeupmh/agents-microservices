@@ -28,7 +28,7 @@ The system follows an event-driven serverless architecture:
 
 - **Runtime**: Python 3.12
 - **Framework**: Serverless Framework 4.18
-- **AI Library**: Strands Agent Framework
+- **AI Library**: Strands Agents SDK
 - **Cloud Services**: AWS Lambda, DynamoDB, EventBridge, Bedrock, S3
 - **Deployment**: Infrastructure as Code
 
@@ -37,11 +37,13 @@ The system follows an event-driven serverless architecture:
 ```
 src/
 ├── agents/
-│   └── medical_agent/
-│       └── handler.py          # Main medical analysis logic
-└── tools/
-    ├── event_creator.py        # Medical event generation
-    └── memory_manager.py       # Patient data persistence
+│   ├── medical_agent/
+│   │   └── handler.py          # Main medical analysis logic
+│   └── tools/
+│       ├── event_creator.py    # Medical event generation
+│       └── memory_manager.py   # Patient data persistence
+└── functions/
+    └── appointment_handler.py  # Appointment creation handler
 ```
 
 ## Prerequisites
@@ -51,6 +53,7 @@ src/
 - Python 3.12
 - AWS CLI configured
 - Serverless Framework CLI
+- Python packages: `strands-agents`, `strands-agents-tools`, `boto3`, `python-dotenv`
 
 ## Installation
 
@@ -60,10 +63,25 @@ npm install
 pip install -r requirements.txt
 ```
 
-2. **Deploy infrastructure**:
+2. **Configure environment**:
+```bash
+# Create .env file
+cp .env.example .env
+# Edit .env with your AWS configuration
+```
+
+3. **Deploy infrastructure**:
 ```bash
 serverless deploy
 ```
+
+## Configuration
+
+### Environment Variables
+
+- `AWS_REGION` - AWS region (default: us-east-1)
+- `BEDROCK_MODEL_ID` - AI model ID (default: us.amazon.nova-micro-v1:0)
+- `MEMORY_TABLE_NAME` - DynamoDB table name (default: medical-agent-memory)
 
 ### Critical Thresholds
 
@@ -125,3 +143,13 @@ The system generates medical events based on analysis:
 
 ### Event Creator
 - `create_event(event_type, patient_id, specialist, urgency, reasoning)` - Generate medical events
+
+### Appointment Handler
+- `create_appointment(event, context)` - Create appointments based on urgency
+- Automatic scheduling: urgent (2h), priority (3 days), routine (30 days)
+- Automatically saves to DynamoDB for tracking
+
+**Code Standards:**
+- Medical analysis performed in Portuguese
+- Use Strands Agents SDK for AI integration
+- Follow AWS serverless best practices

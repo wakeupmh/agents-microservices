@@ -4,20 +4,20 @@ from typing import Dict, Any
 
 def get_patient_memory(patient_id: str, days_back: int = 90) -> Dict[str, Any]:
     """
-    Tool para acessar memória/histórico do paciente no DynamoDB
+    Tool for accessing patient history in DynamoDB
     
     Args:
-        patient_id: ID do paciente
-        days_back: Quantos dias buscar no histórico
+        patient_id: Patient ID
+        days_back: Number of days to search in history
     
     Returns:
-        Dict com histórico do paciente
+        Dict with patient history
     """
     dynamodb = boto3.resource('dynamodb')
     memory_table = dynamodb.Table('medical-agent-memory')
     
     try:
-        # Buscar registros recentes
+        # Fetch recent records
         cutoff_date = (datetime.now() - timedelta(days=days_back)).isoformat()
         
         response = memory_table.query(
@@ -27,13 +27,12 @@ def get_patient_memory(patient_id: str, days_back: int = 90) -> Dict[str, Any]:
                 ':pid': patient_id,
                 ':date': cutoff_date
             },
-            ScanIndexForward=False,  # Mais recente primeiro
+            ScanIndexForward=False,
             Limit=20
         )
         
         items = response.get('Items', [])
         
-        # Organizar por tipo de evento
         organized_memory = {
             'lab_results': [],
             'appointments': [],
@@ -63,21 +62,20 @@ def get_patient_memory(patient_id: str, days_back: int = 90) -> Dict[str, Any]:
 
 def save_to_memory(patient_id: str, event_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Tool para salvar informações na memória do agente
+    Tool for saving information in agent memory
     
     Args:
-        patient_id: ID do paciente
-        event_type: Tipo do evento (lab_result, decision, appointment)
-        data: Dados a serem salvos
+        patient_id: Patient ID
+        event_type: Event type (lab_result, decision, appointment)
+        data: Data to be saved
     
     Returns:
-        Dict com status da operação
+        Dict with operation status
     """
     dynamodb = boto3.resource('dynamodb')
     memory_table = dynamodb.Table('medical-agent-memory')
     
     try:
-        # Criar registro de memória
         memory_record = {
             'patient_id': patient_id,
             'record_id': f"{patient_id}_{int(datetime.now().timestamp())}",

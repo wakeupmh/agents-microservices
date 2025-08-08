@@ -31,10 +31,24 @@ functions:
             detail:
               eventSource: ["s3.amazonaws.com"]
               eventName: ["ObjectCreated:Put"]
+              bucket:
+                name: ["${self:service}-lab-results-${self:provider.stage}"]
     package:
       include:
         - "src/agents/medical_agent/**"
         - "src/tools/**"
+  
+  createAppointment:
+    handler: src.functions.appointment_handler.create_appointment
+    timeout: 60
+    events:
+      - eventBridge:
+          pattern:
+            source: ["medical.analysis"]
+            detail-type: ["Medical Emergency Alert", "Medical Priority Appointment", "Medical Routine Appointment"]
+    package:
+      include:
+        - "src/functions/**"
 
 resources:
   Resources:
@@ -56,5 +70,20 @@ resources:
         TimeToLiveSpecification:
           AttributeName: ttl
           Enabled: true
+    
+    LabResultsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-lab-results-${self:provider.stage}
+        NotificationConfiguration:
+          EventBridgeConfiguration:
+            EventBridgeEnabled: true
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        VersioningConfiguration:
+          Status: Enabled
 plugins:
   - serverless-python-requirements

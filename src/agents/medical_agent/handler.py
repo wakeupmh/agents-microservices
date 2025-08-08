@@ -1,9 +1,14 @@
 import json
+import boto3
+import os
 from strands import Agent
 from strands.models import BedrockModel
 from typing import Dict, Any
+from dotenv import load_dotenv
 from src.tools.event_creator import create_event
 from src.tools.memory_manager import get_patient_memory, save_to_memory
+
+load_dotenv()
 
 MEDICAL_AGENT_PROMPT = """
 Você é um AGENTE MÉDICO INTELIGENTE especializado em análise de exames laboratoriais.
@@ -51,10 +56,22 @@ bedrock_model = BedrockModel(
 
 def medical_analysis(event: Dict[str, Any], _context) -> str:
     """
-    Função principal do agente médico
+    Main medical agent function
     """
     try:
-        lab_data = event.get('lab_data')
+        lab_data = None
+        
+        if 'lab_data' in event:
+            lab_data = event['lab_data']
+        elif 'detail' in event and 'object' in event['detail']:
+            s3_client = boto3.client('s3')
+            bucket_name = event['detail']['bucket']['name']
+            object_key = event['detail']['object']['key']
+            
+            response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+            content = response['Body'].read().decode('utf-8')
+            lab_data = json.loads(content)
+        
         if not lab_data:
             return json.dumps({
                 'status': 'error',
@@ -68,17 +85,14 @@ def medical_analysis(event: Dict[str, Any], _context) -> str:
                 'message': 'ID do paciente não encontrado'
             })
         
-        # Verificar regras críticas ANTES da IA
         critical_check = check_critical_values(lab_data)
         if critical_check['is_critical']:
-            # Salvar decisão crítica na memória
             save_to_memory(
                 patient_id=patient_id,
                 event_type='critical_decision',
                 data=critical_check
             )
             
-            # Criar evento de emergência
             create_event(
                 event_type='alert',
                 patient_id=patient_id,
@@ -137,7 +151,7 @@ def medical_analysis(event: Dict[str, Any], _context) -> str:
 
 def check_critical_values(lab_data: Dict) -> Dict:
     """
-    Verificação determinística para casos críticos
+    Deterministic check for critical cases
     """
     results = lab_data.get('lab_results', {})
     glucose = results.get('glucose', {}).get('value', 0)
