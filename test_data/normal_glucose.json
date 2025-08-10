@@ -1,0 +1,15 @@
+{
+  "patient_id": "PAT001",
+  "exam_date": "2024-08-08T10:30:00Z",
+  "lab_results": {
+    "glucose": {"value": 95, "unit": "mg/dL", "reference": "70-99"},
+    "hba1c": {"value": 6.2, "unit": "%", "reference": "<7.0"},
+    "cholesterol": {"value": 180, "unit": "mg/dL", "reference": "<200"}
+  },
+  "patient_info": {
+    "age": 45,
+    "gender": "M",
+    "conditions": ["diabetes_type2"],
+    "medications": ["metformina"]
+  }
+}

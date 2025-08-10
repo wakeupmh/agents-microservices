@@ -1,0 +1,15 @@
+{
+  "patient_id": "PAT003",
+  "exam_date": "2024-08-08T16:45:00Z",
+  "lab_results": {
+    "glucose": {"value": 350, "unit": "mg/dL", "reference": "70-99"},
+    "hba1c": {"value": 12.1, "unit": "%", "reference": "<7.0"},
+    "ketones": {"value": 2.5, "unit": "mmol/L", "reference": "<0.6"}
+  },
+  "patient_info": {
+    "age": 35,
+    "gender": "M",
+    "conditions": ["diabetes_type1"],
+    "medications": ["insulina_lispro", "insulina_glargina"]
+  }
+}

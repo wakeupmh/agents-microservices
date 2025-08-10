@@ -1,0 +1,16 @@
+{
+  "patient_id": "PAT002",
+  "exam_date": "2024-08-08T14:15:00Z",
+  "lab_results": {
+    "glucose": {"value": 250, "unit": "mg/dL", "reference": "70-99"},
+    "hba1c": {"value": 8.5, "unit": "%", "reference": "<7.0"},
+    "cholesterol": {"value": 220, "unit": "mg/dL", "reference": "<200"},
+    "creatinine": {"value": 1.2, "unit": "mg/dL", "reference": "0.7-1.3"}
+  },
+  "patient_info": {
+    "age": 58,
+    "gender": "F",
+    "conditions": ["diabetes_type2", "hypertension"],
+    "medications": ["metformina", "losartana"]
+  }
+}

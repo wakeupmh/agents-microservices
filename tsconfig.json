@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "outDir": "dist",
+    "skipLibCheck": true
+  },
+  "include": ["src", "@voltagent/core", "@voltagent/vercel-ai", "@ai-sdk/amazon-bedrock", "libsql", "@libsql/client", "@libsql/core", "@libsql/linux-x64-gnu"],
+  "exclude": ["node_modules", "dist"]
+} 

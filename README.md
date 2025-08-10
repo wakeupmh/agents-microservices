@@ -1,155 +1,251 @@
-# Medical AI Agent Microservice
+<div align="center">
+  <h1>⚡ medical-agent</h1>
+  <p>AI Agent powered by <a href="https://voltagent.dev">VoltAgent</a></p>
+  
+  <p>
+    <a href="https://github.com/voltagent/voltagent"><img src="https://img.shields.io/badge/built%20with-VoltAgent-blue" alt="Built with VoltAgent" /></a>
+    <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node Version" /></a>
+  </p>
+</div>
 
-An intelligent serverless medical analysis system that processes laboratory results using AI agents and provides automated clinical decision support.
+## 🚀 Quick Start
 
-## Architecture
+### Prerequisites
 
-![Architecture Diagram](arch.png)
+- Node.js 20+ 
+- Git
+- OpenAI API Key (optional - can configure later)
+  - Get your key at: https://platform.openai.com/api-keys
 
-The system follows an event-driven serverless architecture:
+### Installation
 
-1. **S3** - Lab results uploaded trigger object creation events
-2. **EventBridge** - Routes S3 events to the medical agent coordinator
-3. **Lambda (Agent Coordinator)** - Processes lab data using Amazon Nova Micro AI
-4. **DynamoDB (Memory)** - Stores patient history and analysis results
-5. **EventBridge** - Publishes medical events (alerts, appointments)
-6. **Lambda (Create Appointment)** - Handles downstream appointment creation
-
-## Key Features
-
-- **AI-Powered Analysis** - Uses Amazon Bedrock Nova Micro for intelligent lab result interpretation
-- **Critical Safety Rules** - Deterministic checks for emergency values (glucose >300 or <50 mg/dL)
-- **Patient Memory** - Maintains 7-year medical history for context-aware decisions
-- **Multi-Specialist Routing** - Automatic specialist assignment (endocrinologist, cardiologist, nephrologist)
-- **Urgency Classification** - Three-tier urgency system (urgent, priority, routine)
-- **Portuguese Language Support** - Native Portuguese medical analysis
-
-## Technology Stack
-
-- **Runtime**: Python 3.12
-- **Framework**: Serverless Framework 4.18
-- **AI Library**: Strands Agents SDK
-- **Cloud Services**: AWS Lambda, DynamoDB, EventBridge, Bedrock, S3
-- **Deployment**: Infrastructure as Code
-
-## Project Structure
-
-```
-src/
-├── agents/
-│   ├── medical_agent/
-│   │   └── handler.py          # Main medical analysis logic
-│   └── tools/
-│       ├── event_creator.py    # Medical event generation
-│       └── memory_manager.py   # Patient data persistence
-└── functions/
-    └── appointment_handler.py  # Appointment creation handler
-```
-
-## Prerequisites
-
-- AWS Account with Bedrock access
-- Node.js 18+ and npm
-- Python 3.12
-- AWS CLI configured
-- Serverless Framework CLI
-- Python packages: `strands-agents`, `strands-agents-tools`, `boto3`, `python-dotenv`
-
-## Installation
-
-1. **Clone and install dependencies**:
 ```bash
+# Clone the repository (if not created via create-voltagent-app)
+git clone <your-repo-url>
+cd medical-agent
+
+# Install dependencies
 npm install
-pip install -r requirements.txt
-```
 
-2. **Configure environment**:
-```bash
-# Create .env file
+# Copy environment variables
 cp .env.example .env
-# Edit .env with your AWS configuration
 ```
 
-3. **Deploy infrastructure**:
+### Configuration
+
+Edit `.env` file with your API keys:
+
+```env
+OPENAI_API_KEY=your-api-key-here
+
+# VoltOps Platform (Optional)
+# Get your keys at https://console.voltagent.dev/tracing-setup
+# VOLTAGENT_PUBLIC_KEY=your-public-key
+# VOLTAGENT_SECRET_KEY=your-secret-key
+```
+
+### Running the Application
+
 ```bash
-serverless deploy
+# Development mode (with hot reload)
+npm run dev
+
+# Production build
+npm run build
+
+# Start production server
+npm start
 ```
 
-## Configuration
+## 🎯 Features
 
-### Environment Variables
+This VoltAgent application includes:
 
-- `AWS_REGION` - AWS region (default: us-east-1)
-- `BEDROCK_MODEL_ID` - AI model ID (default: us.amazon.nova-micro-v1:0)
-- `MEMORY_TABLE_NAME` - DynamoDB table name (default: medical-agent-memory)
+- **AI Agent**: Powered by OpenAI (GPT-4o-mini)
+- **Workflows**: Pre-configured expense approval workflow
+- **Memory**: Built-in conversation history
+- **Tools**: Extensible tool system
+- **Type Safety**: Full TypeScript support
 
-### Critical Thresholds
+## 🔍 VoltOps Platform
 
-Modify critical values in `src/agents/medical_agent/handler.py:138`:
+### Local Development
+The VoltOps Platform provides real-time observability for your agents during development:
 
-```python
-def check_critical_values(lab_data: Dict) -> Dict:
-    glucose = results.get('glucose', {}).get('value', 0)
-    
-    if glucose > 300:  # Hyperglycemia threshold
-        return {'is_critical': True, 'action': 'emergency_appointment'}
-    
-    if glucose < 50:   # Hypoglycemia threshold
-        return {'is_critical': True, 'action': 'emergency_appointment'}
+1. **Start your agent**: Run `npm run dev`
+2. **Open console**: Visit [console.voltagent.dev](https://console.voltagent.dev)
+3. **Auto-connect**: The console connects to your local agent at `http://localhost:3141`
+
+Features:
+- 🔍 Real-time execution visualization
+- 🐛 Step-by-step debugging
+- 📊 Performance insights
+- 💾 No data leaves your machine
+
+### Production Monitoring
+For production environments, configure VoltOpsClient:
+
+1. **Create a project**: Sign up at [console.voltagent.dev/tracing-setup](https://console.voltagent.dev/tracing-setup)
+2. **Get your keys**: Copy your Public and Secret keys
+3. **Add to .env**:
+   ```env
+   VOLTAGENT_PUBLIC_KEY=your-public-key
+   VOLTAGENT_SECRET_KEY=your-secret-key
+   ```
+4. **Configure in code**: The template already includes VoltOpsClient setup!
+
+## 📁 Project Structure
+
+```
+medical-agent/
+├── src/
+│   ├── index.ts          # Main agent configuration
+│   ├── tools/            # Custom tools
+│   │   ├── index.ts      # Tool exports
+│   │   └── weather.ts    # Weather tool example
+│   └── workflows/        # Workflow definitions
+│       └── index.ts      # Expense approval workflow
+├── dist/                 # Compiled output (after build)
+├── .env                  # Environment variables
+├── .voltagent/           # Agent memory storage
+├── Dockerfile            # Production deployment
+├── package.json
+└── tsconfig.json
 ```
 
-## Usage
+## 🧪 Testing Workflows
 
-### Input Format
+The included expense approval workflow has test scenarios:
 
-Lab data should be uploaded to S3 in JSON format:
-
+### Scenario 1: Auto-approved (< $500)
 ```json
 {
-  "patient_id": "PAT001",
-  "exam_date": "2024-01-15T10:30:00Z",
-  "lab_results": {
-    "glucose": {"value": 250, "unit": "mg/dL", "reference": "70-99"},
-    "hba1c": {"value": 8.5, "unit": "%", "reference": "<7.0"}
+  "employeeId": "EMP-123",
+  "amount": 250,
+  "category": "office-supplies",
+  "description": "New laptop mouse and keyboard"
+}
+```
+
+### Scenario 2: Manager approval required ($500-$5000)
+```json
+{
+  "employeeId": "EMP-456",
+  "amount": 3500,
+  "category": "travel",
+  "description": "Conference registration and hotel"
+}
+```
+
+### Scenario 3: Director approval required (> $5000)
+```json
+{
+  "employeeId": "EMP-789",
+  "amount": 15000,
+  "category": "equipment",
+  "description": "New server hardware"
+}
+```
+
+## 🐳 Docker Deployment
+
+Build and run with Docker:
+
+```bash
+# Build image
+docker build -t medical-agent .
+
+# Run container
+docker run -p 3141:3141 --env-file .env medical-agent
+
+# Or use docker-compose
+docker-compose up
+```
+
+## 🛠️ Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Build for production
+- `npm start` - Run production build
+- `npm run volt` - VoltAgent CLI tools
+
+### Adding Custom Tools
+
+Create new tools in `src/tools/`:
+
+```typescript
+import { createTool } from '@voltagent/core';
+import { z } from 'zod';
+
+export const myTool = createTool({
+  name: 'myTool',
+  description: 'Description of what this tool does',
+  input: z.object({
+    param: z.string(),
+  }),
+  output: z.string(),
+  handler: async ({ param }) => {
+    // Tool logic here
+    return `Result: ${param}`;
   },
-  "patient_info": {
-    "age": 45,
-    "gender": "M",
-    "conditions": ["diabetes_type2"]
-  }
-}
+});
 ```
 
-### Output Events
+### Creating New Workflows
 
-The system generates medical events based on analysis:
+Add workflows in `src/workflows/`:
 
-```json
-{
-  "patient_id": "PAT001",
-  "event_type": "alert",
-  "specialist": "endocrinologista",
-  "urgency": "urgent",
-  "reasoning": "Hiperglicemia crítica: 250mg/dL. Ajuste imediato necessário.",
-  "created_at": "2024-01-15T10:35:00Z"
-}
+```typescript
+import { createWorkflowChain } from '@voltagent/core';
+import { z } from 'zod';
+
+export const myWorkflow = createWorkflowChain({
+  id: "my-workflow",
+  name: "My Custom Workflow",
+  purpose: "Description of what this workflow does",
+  input: z.object({
+    data: z.string(),
+  }),
+  result: z.object({
+    output: z.string(),
+  }),
+})
+  .andThen({
+    id: "process-data",
+    execute: async ({ data }) => {
+      // Process the input
+      const processed = data.toUpperCase();
+      return { processed };
+    },
+  })
+  .andThen({
+    id: "final-step",
+    execute: async ({ data }) => {
+      // Final transformation
+      return { output: `Result: ${data.processed}` };
+    },
+  });
 ```
 
-## Agent Tools
+## 📚 Resources
 
-### Memory Manager
-- `get_patient_memory(patient_id, days_back)` - Retrieve patient history
-- `save_to_memory(patient_id, event_type, data)` - Store analysis results
+- **Documentation**: [voltagent.dev/docs](https://voltagent.dev/docs/)
+- **Examples**: [github.com/VoltAgent/voltagent/tree/main/examples](https://github.com/VoltAgent/voltagent/tree/main/examples)
+- **Discord**: [Join our community](https://s.voltagent.dev/discord)
+- **Blog**: [voltagent.dev/](https://voltagent.dev/blog/)
 
-### Event Creator
-- `create_event(event_type, patient_id, specialist, urgency, reasoning)` - Generate medical events
+## 🤝 Contributing
 
-### Appointment Handler
-- `create_appointment(event, context)` - Create appointments based on urgency
-- Automatic scheduling: urgent (2h), priority (3 days), routine (30 days)
-- Automatically saves to DynamoDB for tracking
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-**Code Standards:**
-- Medical analysis performed in Portuguese
-- Use Strands Agents SDK for AI integration
-- Follow AWS serverless best practices
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+---
+
+<div align="center">
+  <p>Built with ❤️ using <a href="https://voltagent.dev">VoltAgent</a></p>
+</div>

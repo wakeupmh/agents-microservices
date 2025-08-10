@@ -1,15 +1,36 @@
-service: medical-strands-agent
-
-frameworkVersion: '4.18'
-useDotenv: true
+service: medical-agent
 
 package:
   individually: true
 
+custom:
+  stages:
+    - dev
+    - production
+  stage: ${opt:stage, 'dev'}
+
+build:
+  esbuild:
+    minify: true
+    sourcemap: true
+    keepNames: true
+    external:
+      - '@voltagent/core'
+      - '@voltagent/vercel-ai'
+      - '@ai-sdk/amazon-bedrock'
+      - 'libsql'
+      - '@libsql/client'
+      - '@libsql/linux-x64-gnu'
+    
+
 provider:
   name: aws
-  runtime: python3.12
+  stage: dev
+  runtime: nodejs22.x
   region: us-east-1
+  environment:
+    NODE_OPTIONS: "--enable-source-maps"
+    TABLE_NAME: medical-agent-memory
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -21,34 +42,28 @@ provider:
       Resource: "*"
 
 functions:
-  medicalAgent:
-    handler: src.agents.medical_agent.handler.medical_analysis
-    timeout: 300
+  medicalAnalysis:
+    handler: src/index.handler
     events:
       - eventBridge:
+          eventBus: default
           pattern:
             source: ["aws.s3"]
+            detail-type: ["Object Created"]
             detail:
-              eventSource: ["s3.amazonaws.com"]
-              eventName: ["ObjectCreated:Put"]
               bucket:
-                name: ["${self:service}-lab-results-${self:provider.stage}"]
-    package:
-      include:
-        - "src/agents/medical_agent/**"
-        - "src/tools/**"
+                name: [!Ref LabResultsBucket]
+              object:
+                key: [{ "wildcard": "*.json"}]    
   
-  createAppointment:
-    handler: src.functions.appointment_handler.create_appointment
-    timeout: 60
+  appointment:
+    handler: src/appointment.handler
     events:
       - eventBridge:
+          eventBus: default
           pattern:
             source: ["medical.analysis"]
-            detail-type: ["Medical Emergency Alert", "Medical Priority Appointment", "Medical Routine Appointment"]
-    package:
-      include:
-        - "src/functions/**"
+            detail-type: ["Medical Emergency Alert", "Medical Priority Appointment", "Medical Routine Appointment", "Medical General Event"]
 
 resources:
   Resources:
@@ -85,5 +100,3 @@ resources:
           RestrictPublicBuckets: true
         VersioningConfiguration:
           Status: Enabled
-plugins:
-  - serverless-python-requirements

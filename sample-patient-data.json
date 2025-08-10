@@ -1,0 +1,72 @@
+{
+  "patient_id": "PAT-12345",
+  "exam_date": "2024-08-10T14:30:00Z",
+  "lab_results": {
+    "glucose": {
+      "value": 185,
+      "unit": "mg/dL",
+      "reference_range": "70-100",
+      "status": "high"
+    },
+    "hba1c": {
+      "value": 8.2,
+      "unit": "%",
+      "reference_range": "<7.0",
+      "status": "high"
+    },
+    "creatinine": {
+      "value": 1.1,
+      "unit": "mg/dL",
+      "reference_range": "0.6-1.2",
+      "status": "normal"
+    },
+    "cholesterol_total": {
+      "value": 240,
+      "unit": "mg/dL",
+      "reference_range": "<200",
+      "status": "high"
+    },
+    "cholesterol_ldl": {
+      "value": 160,
+      "unit": "mg/dL",
+      "reference_range": "<100",
+      "status": "high"
+    },
+    "cholesterol_hdl": {
+      "value": 38,
+      "unit": "mg/dL",
+      "reference_range": ">40",
+      "status": "low"
+    },
+    "triglycerides": {
+      "value": 280,
+      "unit": "mg/dL",
+      "reference_range": "<150",
+      "status": "high"
+    }
+  },
+  "patient_info": {
+    "age": 45,
+    "gender": "M",
+    "weight": 95,
+    "height": 175,
+    "medical_history": [
+      "diabetes_type2",
+      "hypertension"
+    ],
+    "medications": [
+      "metformin 1000mg",
+      "lisinopril 10mg"
+    ],
+    "allergies": ["penicillin"],
+    "last_visit": "2024-07-15",
+    "doctor": "Dr. Silva - Endocrinologista"
+  },
+  "lab_metadata": {
+    "laboratory": "Lab Central",
+    "technician": "Maria Santos",
+    "collection_time": "2024-08-10T08:00:00Z",
+    "processing_time": "2024-08-10T12:00:00Z",
+    "urgency": "routine"
+  }
+}
