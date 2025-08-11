@@ -8,7 +8,7 @@ set -e
 # Configuration
 BUCKET_NAME="medical-agent-lab-results-dev"
 AWS_REGION="us-east-1"
-TEST_DATA_DIR="test_data"
+TEST_DATA_DIR="local-test"
 
 # Colors for output
 RED='\033[0;31m'
