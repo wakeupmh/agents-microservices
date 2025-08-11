@@ -57,7 +57,7 @@ const instructions = `
   - "endocrinologista": Diabetes, tireoide, hormônios
   - "cardiologista": Hipertensão, colesterol, cardiac markers
   - "nefrologista": Creatinina, ureia, problemas renais
-  - "clinico_geral": Casos gerais e acompanhamento
+  - "generalist": Casos gerais e acompanhamento
 
   NÍVEIS DE URGÊNCIA:
   - "urgent": Ação imediata (0-24h) - emergências

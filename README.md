@@ -1,251 +1,86 @@
-<div align="center">
-  <h1>⚡ medical-agent</h1>
-  <p>AI Agent powered by <a href="https://voltagent.dev">VoltAgent</a></p>
-  
-  <p>
-    <a href="https://github.com/voltagent/voltagent"><img src="https://img.shields.io/badge/built%20with-VoltAgent-blue" alt="Built with VoltAgent" /></a>
-    <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node Version" /></a>
-  </p>
-</div>
+# Medical Agent Microservice
 
-## 🚀 Quick Start
+A VoltAgent-powered medical analysis system that processes laboratory exam results and provides intelligent clinical insights through AI. The system uses Amazon Bedrock with Nova Micro model to analyze patient data and create medical events and appointments.
+
+## Architecture
+
+![System Architecture](system-arch.png)
+
+The system follows an event-driven microservices architecture:
+
+1. **S3 Storage** → **Object Created Event** → **Agent Coordinator**
+2. **Agent Coordinator** uses Amazon Nova Micro AI model and accesses **DynamoDB Memory** storage
+3. **Agent Coordinator** publishes events to **Default Event Bus** 
+4. **Event Bus** triggers downstream services like **Create Appointment** Lambda functions
+
+## Features
+
+- **Medical Agent**: AI-powered analysis of laboratory results
+- **Memory System**: DynamoDB-based patient record storage and retrieval
+- **Event System**: EventBridge integration for medical workflows
+- **Multi-language Support**: Portuguese medical analysis capabilities
+
+## Getting Started
 
 ### Prerequisites
-
-- Node.js 20+ 
-- Git
-- OpenAI API Key (optional - can configure later)
-  - Get your key at: https://platform.openai.com/api-keys
+- Node.js >= 20.0.0
+- AWS credentials configured
+- DynamoDB and EventBridge access
 
 ### Installation
-
 ```bash
-# Clone the repository (if not created via create-voltagent-app)
-git clone <your-repo-url>
-cd medical-agent
-
-# Install dependencies
 npm install
-
-# Copy environment variables
-cp .env.example .env
 ```
 
-### Configuration
-
-Edit `.env` file with your API keys:
-
-```env
-OPENAI_API_KEY=your-api-key-here
-
-# VoltOps Platform (Optional)
-# Get your keys at https://console.voltagent.dev/tracing-setup
-# VOLTAGENT_PUBLIC_KEY=your-public-key
-# VOLTAGENT_SECRET_KEY=your-secret-key
+### Environment Setup
+Create a `.env` file with your AWS credentials:
+```
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_SESSION_TOKEN=your_session_token (optional)
 ```
 
 ### Running the Application
-
 ```bash
-# Development mode (with hot reload)
+# Development mode
 npm run dev
 
-# Production build
-npm run build
+# Local testing
+npm run local-test
 
-# Start production server
+# Build and start
+npm run build
 npm start
 ```
 
-## 🎯 Features
+## Local Testing
 
-This VoltAgent application includes:
+The `local-test/` directory contains test files for validating the medical agent:
 
-- **AI Agent**: Powered by OpenAI (GPT-4o-mini)
-- **Workflows**: Pre-configured expense approval workflow
-- **Memory**: Built-in conversation history
-- **Tools**: Extensible tool system
-- **Type Safety**: Full TypeScript support
+- **`index.ts`**: Main test runner with medical agent configuration
+- **Test Data Files**: Sample patient data with different glucose scenarios:
+  - `normal_glucose.json` - Normal glucose levels
+  - `high_glucose.json` - High glucose readings
+  - `critical_high_glucose.json` - Critically high glucose (urgent)
+  - `critical_low_glucose.json` - Critically low glucose (urgent)
+  - `sample-patient-data.json` - General patient data sample
 
-## 🔍 VoltOps Platform
-
-### Local Development
-The VoltOps Platform provides real-time observability for your agents during development:
-
-1. **Start your agent**: Run `npm run dev`
-2. **Open console**: Visit [console.voltagent.dev](https://console.voltagent.dev)
-3. **Auto-connect**: The console connects to your local agent at `http://localhost:3141`
-
-Features:
-- 🔍 Real-time execution visualization
-- 🐛 Step-by-step debugging
-- 📊 Performance insights
-- 💾 No data leaves your machine
-
-### Production Monitoring
-For production environments, configure VoltOpsClient:
-
-1. **Create a project**: Sign up at [console.voltagent.dev/tracing-setup](https://console.voltagent.dev/tracing-setup)
-2. **Get your keys**: Copy your Public and Secret keys
-3. **Add to .env**:
-   ```env
-   VOLTAGENT_PUBLIC_KEY=your-public-key
-   VOLTAGENT_SECRET_KEY=your-secret-key
-   ```
-4. **Configure in code**: The template already includes VoltOpsClient setup!
-
-## 📁 Project Structure
-
-```
-medical-agent/
-├── src/
-│   ├── index.ts          # Main agent configuration
-│   ├── tools/            # Custom tools
-│   │   ├── index.ts      # Tool exports
-│   │   └── weather.ts    # Weather tool example
-│   └── workflows/        # Workflow definitions
-│       └── index.ts      # Expense approval workflow
-├── dist/                 # Compiled output (after build)
-├── .env                  # Environment variables
-├── .voltagent/           # Agent memory storage
-├── Dockerfile            # Production deployment
-├── package.json
-└── tsconfig.json
-```
-
-## 🧪 Testing Workflows
-
-The included expense approval workflow has test scenarios:
-
-### Scenario 1: Auto-approved (< $500)
-```json
-{
-  "employeeId": "EMP-123",
-  "amount": 250,
-  "category": "office-supplies",
-  "description": "New laptop mouse and keyboard"
-}
-```
-
-### Scenario 2: Manager approval required ($500-$5000)
-```json
-{
-  "employeeId": "EMP-456",
-  "amount": 3500,
-  "category": "travel",
-  "description": "Conference registration and hotel"
-}
-```
-
-### Scenario 3: Director approval required (> $5000)
-```json
-{
-  "employeeId": "EMP-789",
-  "amount": 15000,
-  "category": "equipment",
-  "description": "New server hardware"
-}
-```
-
-## 🐳 Docker Deployment
-
-Build and run with Docker:
-
+### Running Tests
 ```bash
-# Build image
-docker build -t medical-agent .
-
-# Run container
-docker run -p 3141:3141 --env-file .env medical-agent
-
-# Or use docker-compose
-docker-compose up
+npm run local-test
 ```
 
-## 🛠️ Development
+The local test environment allows you to:
+- Test medical analysis algorithms with real patient data
+- Validate urgent/priority alert generation
+- Verify memory storage and retrieval functionality
+- Test event creation for different medical scenarios
 
-### Available Scripts
+## Medical Decision Rules
 
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm start` - Run production build
-- `npm run volt` - VoltAgent CLI tools
+The agent follows clinical protocols for:
+- **Urgent Cases** (0-24h): Glucose >300 or <50 mg/dL, Creatinine >3.0 mg/dL
+- **Priority Cases** (1-7 days): HbA1c >10%, multiple critical values
+- **Routine Cases** (30-90 days): Normal/stable values
 
-### Adding Custom Tools
-
-Create new tools in `src/tools/`:
-
-```typescript
-import { createTool } from '@voltagent/core';
-import { z } from 'zod';
-
-export const myTool = createTool({
-  name: 'myTool',
-  description: 'Description of what this tool does',
-  input: z.object({
-    param: z.string(),
-  }),
-  output: z.string(),
-  handler: async ({ param }) => {
-    // Tool logic here
-    return `Result: ${param}`;
-  },
-});
-```
-
-### Creating New Workflows
-
-Add workflows in `src/workflows/`:
-
-```typescript
-import { createWorkflowChain } from '@voltagent/core';
-import { z } from 'zod';
-
-export const myWorkflow = createWorkflowChain({
-  id: "my-workflow",
-  name: "My Custom Workflow",
-  purpose: "Description of what this workflow does",
-  input: z.object({
-    data: z.string(),
-  }),
-  result: z.object({
-    output: z.string(),
-  }),
-})
-  .andThen({
-    id: "process-data",
-    execute: async ({ data }) => {
-      // Process the input
-      const processed = data.toUpperCase();
-      return { processed };
-    },
-  })
-  .andThen({
-    id: "final-step",
-    execute: async ({ data }) => {
-      // Final transformation
-      return { output: `Result: ${data.processed}` };
-    },
-  });
-```
-
-## 📚 Resources
-
-- **Documentation**: [voltagent.dev/docs](https://voltagent.dev/docs/)
-- **Examples**: [github.com/VoltAgent/voltagent/tree/main/examples](https://github.com/VoltAgent/voltagent/tree/main/examples)
-- **Discord**: [Join our community](https://s.voltagent.dev/discord)
-- **Blog**: [voltagent.dev/](https://voltagent.dev/blog/)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
----
-
-<div align="center">
-  <p>Built with ❤️ using <a href="https://voltagent.dev">VoltAgent</a></p>
-</div>
+Available specialists: endocrinologist, cardiologist, nephrologist, generalist

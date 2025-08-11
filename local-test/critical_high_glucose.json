@@ -1,5 +1,5 @@
 {
-  "patient_id": "PAT003",
+  "patient_id": "PAT002",
   "exam_date": "2024-08-08T16:45:00Z",
   "lab_results": {
     "glucose": {"value": 350, "unit": "mg/dL", "reference": "70-99"},

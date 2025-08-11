@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file=.env ./src",
+    "local-test": "tsx watch --env-file=.env ./local-test",
     "build": "npx tsc",
     "start": "node dist/index.js",
     "lint": "biome check ./src",

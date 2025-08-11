@@ -5,7 +5,7 @@
 
 # Default values
 BUCKET_NAME="medical-agent-lab-results-dev"
-OBJECT_KEY="test_20250809_220719_high_glucose.json"
+OBJECT_KEY="test_20250810_230545_high_glucose.json"
 FUNCTION_NAME="medicalAnalysis"
 
 # Parse command line arguments

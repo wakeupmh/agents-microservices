@@ -9,6 +9,6 @@
     "outDir": "dist",
     "skipLibCheck": true
   },
-  "include": ["src", "@voltagent/core", "@voltagent/vercel-ai", "@ai-sdk/amazon-bedrock", "libsql", "@libsql/client", "@libsql/core", "@libsql/linux-x64-gnu"],
+  "include": ["src", "@voltagent/core", "@voltagent/vercel-ai", "@ai-sdk/amazon-bedrock", "libsql", "@libsql/client", "@libsql/core", "@libsql/linux-x64-gnu", "local-test/index.ts"],
   "exclude": ["node_modules", "dist"]
 } 

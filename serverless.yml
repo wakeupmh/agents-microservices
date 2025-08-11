@@ -18,10 +18,6 @@ build:
       - '@voltagent/core'
       - '@voltagent/vercel-ai'
       - '@ai-sdk/amazon-bedrock'
-      - 'libsql'
-      - '@libsql/client'
-      - '@libsql/linux-x64-gnu'
-    
 
 provider:
   name: aws
@@ -39,6 +35,7 @@ provider:
         - dynamodb:PutItem
         - dynamodb:GetItem
         - events:PutEvents
+        - s3:GetObject
       Resource: "*"
 
 functions:
