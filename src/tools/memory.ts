@@ -48,7 +48,9 @@ export const memoryTool = createTool({
           success: true,
           message: `Successfully stored record ${record_id} for patient ${patient_id}`,
         };
-      } else if (action === "retrieve") {
+      } 
+      
+      if (action === "retrieve") {
         const command = new QueryCommand({
           TableName: TABLE_NAME,
           KeyConditionExpression: "patient_id = :patient_id",
