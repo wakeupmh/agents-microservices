@@ -1,14 +1,16 @@
 import "dotenv/config";
-import VoltAgent, { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { VoltAgent, Agent } from "@voltagent/core";
 import { memoryTool, eventsTool } from "../src/tools";
+import { honoServer } from "@voltagent/server-hono";
+import { createPinoLogger } from "@voltagent/logger";
 import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 
+const logger = createPinoLogger({ name: "medical-agent", level: "info" });
 const bedrock = createAmazonBedrock({
-    region: 'us-east-1',
+    region: process.env.AWS_REGION || 'us-east-1',
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    sessionToken: process.env.AWS_SESSION_TOKEN,
+    sessionToken: process.env.AWS_SESSION_TOKEN || undefined,
   });
   
   const instructions = `
@@ -64,11 +66,13 @@ const bedrock = createAmazonBedrock({
 const agent = new Agent({
     name: "medical-agent",
     instructions,
-    llm: new VercelAIProvider(),
-    model: bedrock('amazon.nova-micro-v1:0'),
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    model: bedrock('us.amazon.nova-lite-v1:0') as any,
     tools: [memoryTool, eventsTool],
   });
   
 new VoltAgent({
   agents: {medicalAgent: agent},
+  server: honoServer(),
+  logger,
 })

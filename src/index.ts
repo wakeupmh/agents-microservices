@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { memoryTool, eventsTool } from "./tools";
 import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
@@ -10,10 +9,10 @@ const s3Client = new S3Client({
 });
 
 const bedrock = createAmazonBedrock({
-  region: 'us-east-1',
+  region: process.env.AWS_REGION || 'us-east-1',
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  sessionToken: process.env.AWS_SESSION_TOKEN,
+  sessionToken: process.env.AWS_SESSION_TOKEN || undefined,
 });
 
 const instructions = `
@@ -70,8 +69,8 @@ const instructions = `
 interface LabData {
   patient_id: string;
   exam_date?: string;
-  lab_results?: Record<string, any>;
-  patient_info?: Record<string, any>;
+  lab_results?: Record<string, unknown>;
+  patient_info?: Record<string, unknown>;
 }
 
 interface CriticalCheck {
@@ -106,7 +105,17 @@ function checkCriticalValues(labData: LabData): CriticalCheck {
   return { is_critical: false };
 }
 
-export const handler = async (event: any) => {
+export const handler = async (event: {
+  detail: {
+    lab_data?: LabData;
+    object?: {
+      key: string;
+    };
+    bucket: {
+      name: string;
+    };
+  };
+}) => {
   try {
     console.log('EventBridge event received:', JSON.stringify(event));
     
@@ -165,9 +174,9 @@ export const handler = async (event: any) => {
       await eventsTool.execute({
         event_type: 'alert',
         patient_id: patientId,
-        specialist: criticalCheck.specialist!,
+        specialist: criticalCheck.specialist || '',
         urgency: 'urgent',
-        reasoning: criticalCheck.reasoning!
+        reasoning: criticalCheck.reasoning || ''
       });
       
       return {
@@ -180,8 +189,8 @@ export const handler = async (event: any) => {
     const agent = new Agent({
       name: "medical-agent",
       instructions,
-      llm: new VercelAIProvider(),
-      model: bedrock('amazon.nova-micro-v1:0'),
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+      model: bedrock('us.amazon.nova-lite-v1:0') as any,
       tools: [memoryTool, eventsTool],
     });
     
