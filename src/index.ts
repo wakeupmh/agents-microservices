@@ -84,7 +84,7 @@ export const handler = async (event: {
 		// urgency, specialist, event type, and whether an event is warranted at all.
 		const decision = await decideTriage(labData, history.records);
 
-		await memoryTool.execute({
+		const storeMemory = memoryTool.execute({
 			action: "store",
 			patient_id: patientId,
 			record_id: `triage_${Date.now()}`,
@@ -95,15 +95,18 @@ export const handler = async (event: {
 			},
 		});
 
-		if (decision.needs_event) {
-			await eventsTool.execute({
-				event_type: decision.event_type,
-				patient_id: patientId,
-				specialist: decision.specialist,
-				urgency: decision.urgency,
-				reasoning: decision.reasoning,
-			});
-		}
+		await (decision.needs_event
+			? Promise.all([
+					storeMemory,
+					eventsTool.execute({
+						event_type: decision.event_type,
+						patient_id: patientId,
+						specialist: decision.specialist,
+						urgency: decision.urgency,
+						reasoning: decision.reasoning,
+					}),
+				])
+			: storeMemory);
 
 		return {
 			status: "success",

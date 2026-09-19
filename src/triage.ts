@@ -1,6 +1,14 @@
 import { type EntryType, TypeSafeClient, choice, noul } from "@typesafe-ai/sdk";
 
-const typesafeClient = new TypeSafeClient();
+// Constructed lazily so a missing/blank TYPESAFE_API_KEY surfaces inside
+// decideTriage's caller try/catch instead of failing Lambda module init.
+let typesafeClient: TypeSafeClient | undefined;
+function getClient(): TypeSafeClient {
+	if (!typesafeClient) {
+		typesafeClient = new TypeSafeClient();
+	}
+	return typesafeClient;
+}
 
 export type Urgency = "urgent" | "priority" | "routine";
 export type Specialist =
@@ -40,7 +48,7 @@ export async function decideTriage(
 		// Lab data is already-parsed JSON from S3/EventBridge, so it satisfies JsonValue at runtime.
 	} as unknown as EntryType;
 
-	const { answers } = await typesafeClient.systemOne({
+	const { answers } = await getClient().systemOne({
 		state,
 		questions: {
 			urgency: choice("What urgency level does this lab result require?", {
