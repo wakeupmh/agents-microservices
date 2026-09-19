@@ -20,6 +20,7 @@
     "@aws-sdk/client-s3": "~3.864.0",
     "@aws-sdk/lib-dynamodb": "~3.864.0",
     "@libsql/client": "~0.3.2",
+    "@typesafe-ai/sdk": "^0.6.0",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^1.1.10",
     "@voltagent/libsql": "^1.0.5",

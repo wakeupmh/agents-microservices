@@ -33,11 +33,12 @@ npm install
 ```
 
 ### Environment Setup
-Create a `.env` file with your AWS credentials:
+Create a `.env` file with your AWS credentials and TypeSafe API key:
 ```
 AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
 AWS_SESSION_TOKEN=your_session_token (optional)
+TYPESAFE_API_KEY=your_typesafe_api_key
 ```
 
 ### Running the Application
@@ -78,7 +79,10 @@ The local test environment allows you to:
 
 ## Medical Decision Rules
 
-The agent follows clinical protocols for:
+Every triage decision (urgency, specialist, event type, and whether an event
+is warranted at all) is made by [Jev](https://typesafe.ai), TypeSafe AI's
+structured decision model, via `src/triage.ts`. The agent follows clinical
+protocols for:
 - **Urgent Cases** (0-24h): Glucose >300 or <50 mg/dL, Creatinine >3.0 mg/dL
 - **Priority Cases** (1-7 days): HbA1c >10%, multiple critical values
 - **Routine Cases** (30-90 days): Normal/stable values

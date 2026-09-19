@@ -27,6 +27,7 @@ provider:
   environment:
     NODE_OPTIONS: "--enable-source-maps"
     TABLE_NAME: medical-agent-memory
+    TYPESAFE_API_KEY: ${env:TYPESAFE_API_KEY}
   iamRoleStatements:
     - Effect: Allow
       Action:
