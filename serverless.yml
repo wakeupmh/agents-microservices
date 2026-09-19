@@ -30,7 +30,6 @@ provider:
   iamRoleStatements:
     - Effect: Allow
       Action:
-        - bedrock:InvokeModel
         - dynamodb:Query
         - dynamodb:PutItem
         - dynamodb:GetItem

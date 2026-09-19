@@ -72,9 +72,14 @@ async function runFixture(fixture: FixtureCase): Promise<boolean> {
 		console.log(`reasoning: ${decision.reasoning}`);
 
 		if (decision.reasoning.startsWith("Jev indisponível")) {
-			console.warn(
-				"WARN: deterministic backstop engaged instead of a live Jev call — check TYPESAFE_API_KEY.",
+			// The deterministic backstop only forces "urgent" for the exact
+			// critical thresholds it hardcodes, which happens to match these
+			// fixtures' expectedUrgency — so treat it as a failure explicitly
+			// rather than let a broken Jev integration silently read as PASS.
+			console.error(
+				"FAIL: deterministic backstop engaged instead of a live Jev call — this does not test Jev's judgment. Check TYPESAFE_API_KEY.",
 			);
+			return false;
 		}
 
 		if (

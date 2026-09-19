@@ -1,6 +1,6 @@
 # Medical Agent Microservice
 
-A VoltAgent-powered medical analysis system that processes laboratory exam results and provides intelligent clinical insights through AI. The system uses Amazon Bedrock with Nova Micro model to analyze patient data and create medical events and appointments.
+A VoltAgent-powered medical analysis system that processes laboratory exam results and provides intelligent clinical insights through AI. The system uses [Jev](https://typesafe.ai), TypeSafe AI's structured decision model, to triage patient data and create medical events and appointments.
 
 ## Architecture
 
@@ -9,7 +9,7 @@ A VoltAgent-powered medical analysis system that processes laboratory exam resul
 The system follows an event-driven microservices architecture:
 
 1. **S3 Storage** → **Object Created Event** → **Agent Coordinator**
-2. **Agent Coordinator** uses Amazon Nova Micro AI model and accesses **DynamoDB Memory** storage
+2. **Agent Coordinator** uses Jev (TypeSafe AI) for triage decisions and accesses **DynamoDB Memory** storage
 3. **Agent Coordinator** publishes events to **Default Event Bus** 
 4. **Event Bus** triggers downstream services like **Create Appointment** Lambda functions
 
