@@ -32,11 +32,85 @@ interface TriageInput {
 	exam_date?: string;
 }
 
+function getNumericLabValue(
+	labResults: Record<string, unknown> | undefined,
+	key: string,
+): number | undefined {
+	const entry = labResults?.[key];
+	if (entry && typeof entry === "object" && "value" in entry) {
+		const value = (entry as { value?: unknown }).value;
+		return typeof value === "number" ? value : undefined;
+	}
+	return undefined;
+}
+
 /**
- * Jev is the single decision maker for every triage action: urgency level,
- * specialist assignment, event type, and whether an event is warranted at all.
+ * Deterministic backstop for the handful of unambiguously life-threatening
+ * values. Used only when the Jev call itself fails (network/API error) —
+ * never to second-guess a Jev judgment that came back successfully.
+ */
+function deterministicCriticalFallback(
+	labData: TriageInput,
+): TriageDecision | null {
+	const glucose = getNumericLabValue(labData.lab_results, "glucose");
+	const creatinine = getNumericLabValue(labData.lab_results, "creatinine");
+
+	if (glucose !== undefined && glucose > 300) {
+		return {
+			urgency: "urgent",
+			specialist: "endocrinologista",
+			event_type: "alert",
+			needs_event: true,
+			reasoning: `Jev indisponível; backstop determinístico ativado: hiperglicemia crítica ${glucose}mg/dL (>300), risco de cetoacidose.`,
+		};
+	}
+	if (glucose !== undefined && glucose < 50) {
+		return {
+			urgency: "urgent",
+			specialist: "endocrinologista",
+			event_type: "alert",
+			needs_event: true,
+			reasoning: `Jev indisponível; backstop determinístico ativado: hipoglicemia severa ${glucose}mg/dL (<50), risco de coma.`,
+		};
+	}
+	if (creatinine !== undefined && creatinine > 3.0) {
+		return {
+			urgency: "urgent",
+			specialist: "nefrologista",
+			event_type: "alert",
+			needs_event: true,
+			reasoning: `Jev indisponível; backstop determinístico ativado: creatinina crítica ${creatinine}mg/dL (>3.0).`,
+		};
+	}
+	return null;
+}
+
+/**
+ * Jev is the decision maker for every triage action: urgency level,
+ * specialist assignment, event type, and whether an event is warranted at
+ * all. If the Jev call itself fails, an unambiguously critical value still
+ * gets a deterministic alert rather than falling through silently.
  */
 export async function decideTriage(
+	labData: TriageInput,
+	history?: unknown,
+): Promise<TriageDecision> {
+	try {
+		return await runJevTriage(labData, history);
+	} catch (error) {
+		const fallback = deterministicCriticalFallback(labData);
+		if (fallback) {
+			console.error(
+				"Jev triage call failed; deterministic critical backstop engaged.",
+				error,
+			);
+			return fallback;
+		}
+		throw error;
+	}
+}
+
+async function runJevTriage(
 	labData: TriageInput,
 	history?: unknown,
 ): Promise<TriageDecision> {

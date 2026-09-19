@@ -81,8 +81,11 @@ The local test environment allows you to:
 
 Every triage decision (urgency, specialist, event type, and whether an event
 is warranted at all) is made by [Jev](https://typesafe.ai), TypeSafe AI's
-structured decision model, via `src/triage.ts`. The agent follows clinical
-protocols for:
+structured decision model, via `src/triage.ts`. If the Jev call itself fails,
+a deterministic backstop still raises an urgent alert for the handful of
+unambiguously life-threatening values below — it never overrides a
+successful Jev judgment, only covers Jev being unreachable. The agent
+follows clinical protocols for:
 - **Urgent Cases** (0-24h): Glucose >300 or <50 mg/dL, Creatinine >3.0 mg/dL
 - **Priority Cases** (1-7 days): HbA1c >10%, multiple critical values
 - **Routine Cases** (30-90 days): Normal/stable values
