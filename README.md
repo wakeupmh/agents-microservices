@@ -56,26 +56,42 @@ npm start
 
 ## Local Testing
 
-The `local-test/` directory contains test files for validating the medical agent:
+The `local-test/` directory contains a fixture-driven sanity check for
+Jev's triage decisions, plus the sample lab-result payloads it reads:
 
-- **`index.ts`**: Main test runner with medical agent configuration
-- **Test Data Files**: Sample patient data with different glucose scenarios:
-  - `normal_glucose.json` - Normal glucose levels
-  - `high_glucose.json` - High glucose readings
-  - `critical_high_glucose.json` - Critically high glucose (urgent)
-  - `critical_low_glucose.json` - Critically low glucose (urgent)
-  - `sample-patient-data.json` - General patient data sample
+- **`index.ts`**: Calls `decideTriage()` from `src/triage.ts` directly —
+  the exact function the production Lambda handler uses — against each
+  fixture below, and prints the resulting urgency, specialist, event type,
+  and reasoning. It only needs `TYPESAFE_API_KEY`; it does not touch
+  DynamoDB or EventBridge, so no AWS credentials are required.
+- **Fixtures** — sample patient lab results covering different scenarios:
+  - `normal_glucose.json` - Normal glucose levels (expected: routine)
+  - `high_glucose.json` - High (non-critical) glucose
+  - `critical_high_glucose.json` - Critically high glucose (expected: urgent)
+  - `critical_low_glucose.json` - Critically low glucose (expected: urgent)
+  - `sample-patient-data.json` - General patient data with multiple abnormal values
 
-### Running Tests
+### Running the fixture check
 ```bash
 npm run local-test
 ```
+This runs once and exits non-zero if `normal_glucose.json`,
+`critical_high_glucose.json`, or `critical_low_glucose.json` don't come
+back with the expected urgency. The other two fixtures are borderline
+judgment calls, so they're logged for review but not asserted.
 
-The local test environment allows you to:
-- Test medical analysis algorithms with real patient data
-- Validate urgent/priority alert generation
-- Verify memory storage and retrieval functionality
-- Test event creation for different medical scenarios
+If a fixture's `reasoning` starts with "Jev indisponível", the
+deterministic backstop in `src/triage.ts` engaged instead of a live Jev
+call — check that `TYPESAFE_API_KEY` is set in `.env`.
+
+### Testing the full pipeline (memory + events) against AWS
+`local-test/index.ts` does not exercise `memoryTool`, `eventsTool`, or the
+Lambda `handler` itself. To test the full event-driven pipeline —
+including DynamoDB storage/retrieval and EventBridge event creation — use:
+```bash
+./test-invoke.sh   # invoke src/index.handler locally via `sls invoke local`
+./test-s3.sh       # upload fixtures to S3 to trigger the deployed pipeline
+```
 
 ## Medical Decision Rules
 

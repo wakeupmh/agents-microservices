@@ -5,16 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file=.env ./src",
-    "local-test": "tsx watch --env-file=.env ./local-test",
+    "local-test": "tsx --env-file=.env ./local-test",
     "build": "npx tsc",
     "start": "node dist/index.js",
-    "lint": "biome check ./src",
-    "lint:fix": "biome check --write ./src",
+    "lint": "biome check ./src ./local-test",
+    "lint:fix": "biome check --write ./src ./local-test",
     "typecheck": "tsc --noEmit",
     "volt": "volt"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^3.0.22",
     "@aws-sdk/client-dynamodb": "~3.864.0",
     "@aws-sdk/client-eventbridge": "~3.864.0",
     "@aws-sdk/client-s3": "~3.864.0",
@@ -24,8 +23,6 @@
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^1.1.10",
     "@voltagent/libsql": "^1.0.5",
-    "@voltagent/logger": "^1.0.1",
-    "@voltagent/server-hono": "^1.0.6",
     "ai": "^5.0.45",
     "dotenv": "~16.4.7",
     "libsql": "~0.3.2"

@@ -17,7 +17,6 @@ build:
     external:
       - '@voltagent/core'
       - '@voltagent/vercel-ai'
-      - '@ai-sdk/amazon-bedrock'
 
 provider:
   name: aws
