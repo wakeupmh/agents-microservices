@@ -65,10 +65,18 @@ async function runFixture(fixture: FixtureCase): Promise<boolean> {
 		// needed — use test-invoke.sh or test-s3.sh for the full handler.
 		const decision = await decideTriage(labData);
 
-		console.log(`urgency: ${decision.urgency}`);
-		console.log(`specialist: ${decision.specialist}`);
-		console.log(`event_type: ${decision.event_type}`);
-		console.log(`needs_event: ${decision.needs_event}`);
+		console.log(
+			`urgency: ${decision.urgency} (confidence ${decision.confidence.urgency.toFixed(2)})`,
+		);
+		console.log(
+			`specialist: ${decision.specialist} (confidence ${decision.confidence.specialist.toFixed(2)})`,
+		);
+		console.log(
+			`event_type: ${decision.event_type} (confidence ${decision.confidence.event_type.toFixed(2)})`,
+		);
+		console.log(
+			`needs_event: ${decision.needs_event} (probability ${decision.confidence.needs_event.toFixed(2)})`,
+		);
 		console.log(`reasoning: ${decision.reasoning}`);
 
 		if (decision.reasoning.startsWith("Jev indisponível")) {

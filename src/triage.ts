@@ -23,6 +23,14 @@ export interface TriageDecision {
 	specialist: Specialist;
 	event_type: EventType;
 	needs_event: boolean;
+	// Per-answer confidence (0-1) straight from Jev; needs_event uses the raw
+	// noul probability rather than the >=0.5 boolean it was thresholded into.
+	confidence: {
+		urgency: number;
+		specialist: number;
+		event_type: number;
+		needs_event: number;
+	};
 	reasoning: string;
 }
 
@@ -55,12 +63,15 @@ function deterministicCriticalFallback(
 	const glucose = getNumericLabValue(labData.lab_results, "glucose");
 	const creatinine = getNumericLabValue(labData.lab_results, "creatinine");
 
+	const certain = { urgency: 1, specialist: 1, event_type: 1, needs_event: 1 };
+
 	if (glucose !== undefined && glucose > 300) {
 		return {
 			urgency: "urgent",
 			specialist: "endocrinologista",
 			event_type: "alert",
 			needs_event: true,
+			confidence: certain,
 			reasoning: `Jev indisponível; backstop determinístico ativado: hiperglicemia crítica ${glucose}mg/dL (>300), risco de cetoacidose.`,
 		};
 	}
@@ -70,6 +81,7 @@ function deterministicCriticalFallback(
 			specialist: "endocrinologista",
 			event_type: "alert",
 			needs_event: true,
+			confidence: certain,
 			reasoning: `Jev indisponível; backstop determinístico ativado: hipoglicemia severa ${glucose}mg/dL (<50), risco de coma.`,
 		};
 	}
@@ -79,6 +91,7 @@ function deterministicCriticalFallback(
 			specialist: "nefrologista",
 			event_type: "alert",
 			needs_event: true,
+			confidence: certain,
 			reasoning: `Jev indisponível; backstop determinístico ativado: creatinina crítica ${creatinine}mg/dL (>3.0).`,
 		};
 	}
@@ -173,6 +186,12 @@ async function runJevTriage(
 		specialist: answers.specialist.choice,
 		event_type: answers.event_type.choice,
 		needs_event: answers.needs_event.noul >= 0.5,
+		confidence: {
+			urgency: answers.urgency.confidence,
+			specialist: answers.specialist.confidence,
+			event_type: answers.event_type.confidence,
+			needs_event: answers.needs_event.noul,
+		},
 		reasoning,
 	};
 }
