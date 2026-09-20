@@ -84,6 +84,17 @@ export const handler = async (event: {
 		// urgency, specialist, event type, and whether an event is warranted at all.
 		const decision = await decideTriage(labData, history.records);
 
+		// event_type is the answer that showed run-to-run instability on cases with
+		// several simultaneous abnormal values (see local-test's benchmark notes) —
+		// exactly when Jev's own confidence dropped below ~0.5. Below that threshold,
+		// publish the safer "review" instead of acting on an unstable answer; the
+		// stored decision still records what Jev actually said.
+		const EVENT_TYPE_CONFIDENCE_THRESHOLD = 0.5;
+		const eventType =
+			decision.confidence.event_type < EVENT_TYPE_CONFIDENCE_THRESHOLD
+				? "review"
+				: decision.event_type;
+
 		const storeMemory = memoryTool.execute({
 			action: "store",
 			patient_id: patientId,
@@ -99,7 +110,7 @@ export const handler = async (event: {
 			? Promise.all([
 					storeMemory,
 					eventsTool.execute({
-						event_type: decision.event_type,
+						event_type: eventType,
 						patient_id: patientId,
 						specialist: decision.specialist,
 						urgency: decision.urgency,
