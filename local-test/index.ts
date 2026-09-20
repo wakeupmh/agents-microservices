@@ -1,78 +1,127 @@
 import "dotenv/config";
-import { VoltAgent, Agent } from "@voltagent/core";
-import { memoryTool, eventsTool } from "../src/tools";
-import { honoServer } from "@voltagent/server-hono";
-import { createPinoLogger } from "@voltagent/logger";
-import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { type Urgency, decideTriage } from "../src/triage";
 
-const logger = createPinoLogger({ name: "medical-agent", level: "info" });
-const bedrock = createAmazonBedrock({
-    region: process.env.AWS_REGION || 'us-east-1',
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    sessionToken: process.env.AWS_SESSION_TOKEN || undefined,
-  });
-  
-  const instructions = `
-    Você é um AGENTE MÉDICO INTELIGENTE especializado em análise de exames laboratoriais.
-  
-    FERRAMENTAS DISPONÍVEIS:
-    
-    1. MEMORY (Ferramenta de Memória):
-       - Função: Armazena e recupera registros médicos dos pacientes no DynamoDB
-       - Ações disponíveis:
-         * "store": Salva novos registros (necessita patient_id, record_id, data)
-         * "retrieve": Busca registros existentes (necessita patient_id, record_id opcional)
-       - Use para: Consultar histórico, salvar análises, comparar tendências
-       - Exemplo: memory(action="retrieve", patient_id="12345") para buscar histórico
-  
-    2. CREATE EVENT (Ferramenta de Eventos):
-       - Função: Cria eventos médicos no EventBridge para workflows hospitalares
-       - Parâmetros obrigatórios:
-         * event_type: "appointment", "alert", "review"
-         * patient_id: ID do paciente
-         * specialist: Especialista recomendado
-         * urgency: "routine", "priority", "urgent"
-         * reasoning: Justificativa médica detalhada
-       - Use para: Agendar consultas, criar alertas urgentes, solicitar revisões
-  
-    PROTOCOLO DE TRABALHO OBRIGATÓRIO:
-    1. SEMPRE inicie consultando memory para buscar histórico do paciente
-    2. Analise valores atuais vs. tendências históricas
-    3. Salve sua análise completa na memory para referência futura
-    4. Se indicado clinicamente, crie eventos com createEvent
-  
-    REGRAS CRÍTICAS DE DECISÃO:
-    - Glicose > 300mg/dL = URGENT + createEvent(alert)
-    - Glicose < 50mg/dL = URGENT + createEvent(alert)
-    - HbA1c > 10% = PRIORITY + createEvent(appointment)
-    - Creatinina > 3.0mg/dL = URGENT + createEvent(alert)
-    - Múltiplos valores críticos = PRIORITY
-    - Valores normais/estáveis = ROUTINE ou observação
-  
-    ESPECIALISTAS DISPONÍVEIS:
-    - "endocrinologista": Diabetes, tireoide, hormônios
-    - "cardiologista": Hipertensão, colesterol, cardiac markers
-    - "nefrologista": Creatinina, ureia, problemas renais
-    - "generalist": Casos gerais e acompanhamento
-  
-    NÍVEIS DE URGÊNCIA:
-    - "urgent": Ação imediata (0-24h) - emergências
-    - "priority": Ação prioritária (1-7 dias) - alterações importantes
-    - "routine": Acompanhamento normal (30-90 dias) - manutenção
-  
-    SEMPRE justifique suas decisões e use as ferramentas de forma sequencial e lógica.
-  `
-const agent = new Agent({
-    name: "medical-agent",
-    instructions,
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    model: bedrock('us.amazon.nova-lite-v1:0') as any,
-    tools: [memoryTool, eventsTool],
-  });
-  
-new VoltAgent({
-  agents: {medicalAgent: agent},
-  server: honoServer(),
-  logger,
-})
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+interface LabDataFixture {
+	patient_id?: string;
+	exam_date?: string;
+	lab_results?: Record<string, unknown>;
+	patient_info?: Record<string, unknown>;
+}
+
+interface FixtureCase {
+	file: string;
+	description: string;
+	// Only set for fixtures that are unambiguous per the thresholds Jev
+	// itself is given (see the urgency choice descriptions in
+	// src/triage.ts). Left undefined for genuinely borderline cases.
+	expectedUrgency?: Urgency;
+}
+
+const FIXTURES: FixtureCase[] = [
+	{
+		file: "normal_glucose.json",
+		description: "Normal glucose levels",
+		expectedUrgency: "routine",
+	},
+	{
+		file: "high_glucose.json",
+		description: "High (non-critical) glucose",
+	},
+	{
+		file: "critical_high_glucose.json",
+		description: "Critical high glucose (>300 mg/dL)",
+		expectedUrgency: "urgent",
+	},
+	{
+		file: "critical_low_glucose.json",
+		description: "Critical low glucose (<50 mg/dL)",
+		expectedUrgency: "urgent",
+	},
+	{
+		file: "sample-patient-data.json",
+		description: "General patient data sample (multiple abnormal values)",
+	},
+];
+
+function loadFixture(file: string): LabDataFixture {
+	const raw = readFileSync(join(__dirname, file), "utf-8");
+	return JSON.parse(raw) as LabDataFixture;
+}
+
+async function runFixture(fixture: FixtureCase): Promise<boolean> {
+	const labData = loadFixture(fixture.file);
+	console.log(`\n=== ${fixture.file} — ${fixture.description} ===`);
+	console.log(`patient_id: ${labData.patient_id ?? "(missing)"}`);
+
+	try {
+		// No patient history is passed: this checks Jev's judgment on each
+		// fixture in isolation, not the DynamoDB-backed continuity path. It
+		// never touches memoryTool/eventsTool, so no AWS credentials are
+		// needed — use test-invoke.sh or test-s3.sh for the full handler.
+		const decision = await decideTriage(labData);
+
+		console.log(`urgency: ${decision.urgency}`);
+		console.log(`specialist: ${decision.specialist}`);
+		console.log(`event_type: ${decision.event_type}`);
+		console.log(`needs_event: ${decision.needs_event}`);
+		console.log(`reasoning: ${decision.reasoning}`);
+
+		if (decision.reasoning.startsWith("Jev indisponível")) {
+			// The deterministic backstop only forces "urgent" for the exact
+			// critical thresholds it hardcodes, which happens to match these
+			// fixtures' expectedUrgency — so treat it as a failure explicitly
+			// rather than let a broken Jev integration silently read as PASS.
+			console.error(
+				"FAIL: deterministic backstop engaged instead of a live Jev call — this does not test Jev's judgment. Check TYPESAFE_API_KEY.",
+			);
+			return false;
+		}
+
+		if (
+			fixture.expectedUrgency &&
+			decision.urgency !== fixture.expectedUrgency
+		) {
+			console.error(
+				`FAIL: expected urgency "${fixture.expectedUrgency}", got "${decision.urgency}"`,
+			);
+			return false;
+		}
+
+		console.log("PASS");
+		return true;
+	} catch (error) {
+		console.error(
+			`ERROR: ${error instanceof Error ? error.message : "Unknown error"}`,
+		);
+		return false;
+	}
+}
+
+async function main() {
+	console.log(
+		"Running Jev triage against local-test fixtures (decideTriage from src/triage.ts)...",
+	);
+
+	let allPassed = true;
+	for (const fixture of FIXTURES) {
+		const passed = await runFixture(fixture);
+		allPassed = allPassed && passed;
+	}
+
+	console.log(
+		`\n${allPassed ? "All fixtures passed." : "Some fixtures failed — see FAIL/ERROR above."}`,
+	);
+	if (!allPassed) {
+		process.exitCode = 1;
+	}
+}
+
+main().catch((error) => {
+	console.error("Unexpected error running local-test fixtures:", error);
+	process.exitCode = 1;
+});

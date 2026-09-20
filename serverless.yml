@@ -17,7 +17,6 @@ build:
     external:
       - '@voltagent/core'
       - '@voltagent/vercel-ai'
-      - '@ai-sdk/amazon-bedrock'
 
 provider:
   name: aws
@@ -27,10 +26,10 @@ provider:
   environment:
     NODE_OPTIONS: "--enable-source-maps"
     TABLE_NAME: medical-agent-memory
+    TYPESAFE_API_KEY: ${env:TYPESAFE_API_KEY}
   iamRoleStatements:
     - Effect: Allow
       Action:
-        - bedrock:InvokeModel
         - dynamodb:Query
         - dynamodb:PutItem
         - dynamodb:GetItem

@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4a5568"/>
+    </marker>
+    <marker id="arrowPurple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b46c1"/>
+    </marker>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a0aec0"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="660" fill="#ffffff"/>
+
+  <text x="600" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#1a202c">Medical Agent — Event-Driven Architecture</text>
+  <text x="600" y="56" text-anchor="middle" font-size="13" fill="#718096">S3 upload triggers triage; Jev (TypeSafe AI) is the single decision maker; EventBridge fans out the result</text>
+
+  <!-- Main pipeline row: y 275-365, center 320 -->
+
+  <!-- S3 bucket -->
+  <rect x="30" y="275" width="170" height="90" rx="10" fill="#fff7ed" stroke="#dd6b20" stroke-width="1.5"/>
+  <text x="115" y="308" text-anchor="middle" font-size="13" font-weight="700" fill="#7c2d12">Amazon S3</text>
+  <text x="115" y="326" text-anchor="middle" font-size="11" fill="#7c2d12">lab-results bucket</text>
+  <text x="115" y="342" text-anchor="middle" font-size="11" fill="#7c2d12">*.json upload</text>
+
+  <!-- EventBridge in -->
+  <rect x="240" y="275" width="190" height="90" rx="10" fill="#ebf8ff" stroke="#3182ce" stroke-width="1.5"/>
+  <text x="335" y="303" text-anchor="middle" font-size="13" font-weight="700" fill="#1a4971">Amazon EventBridge</text>
+  <text x="335" y="320" text-anchor="middle" font-size="11" fill="#1a4971">default bus</text>
+  <text x="335" y="336" text-anchor="middle" font-size="10" fill="#1a4971">pattern: source=aws.s3</text>
+  <text x="335" y="350" text-anchor="middle" font-size="10" fill="#1a4971">detail-type=Object Created</text>
+
+  <!-- medicalAnalysis coordinator -->
+  <rect x="470" y="245" width="230" height="150" rx="10" fill="#f0fff4" stroke="#2f855a" stroke-width="1.5"/>
+  <text x="585" y="272" text-anchor="middle" font-size="13" font-weight="700" fill="#22543d">medicalAnalysis Lambda</text>
+  <text x="585" y="288" text-anchor="middle" font-size="11" font-weight="600" fill="#22543d">(Agent Coordinator — src/index.ts)</text>
+  <text x="585" y="310" text-anchor="middle" font-size="10.5" fill="#22543d">1. retrieve patient history</text>
+  <text x="585" y="326" text-anchor="middle" font-size="10.5" fill="#22543d">2. decideTriage() → Jev</text>
+  <text x="585" y="342" text-anchor="middle" font-size="10.5" fill="#22543d">3. store record (parallel)</text>
+  <text x="585" y="358" text-anchor="middle" font-size="10.5" fill="#22543d">4. publish event if needed</text>
+  <text x="585" y="378" text-anchor="middle" font-size="9.5" fill="#4a7a63" font-style="italic">no AWS creds needed for local-test</text>
+
+  <!-- EventBridge out -->
+  <rect x="740" y="275" width="190" height="90" rx="10" fill="#ebf8ff" stroke="#3182ce" stroke-width="1.5"/>
+  <text x="835" y="303" text-anchor="middle" font-size="13" font-weight="700" fill="#1a4971">Amazon EventBridge</text>
+  <text x="835" y="320" text-anchor="middle" font-size="11" fill="#1a4971">default bus</text>
+  <text x="835" y="336" text-anchor="middle" font-size="10" fill="#1a4971">pattern: source=medical.analysis</text>
+  <text x="835" y="350" text-anchor="middle" font-size="10" fill="#1a4971">(same bus as above)</text>
+
+  <!-- appointment downstream -->
+  <rect x="990" y="260" width="180" height="120" rx="10" fill="#fff5f5" stroke="#c53030" stroke-width="1.5"/>
+  <text x="1080" y="288" text-anchor="middle" font-size="13" font-weight="700" fill="#742a2a">appointment Lambda</text>
+  <text x="1080" y="304" text-anchor="middle" font-size="11" fill="#742a2a">(src/appointment.ts)</text>
+  <text x="1080" y="324" text-anchor="middle" font-size="10.5" fill="#742a2a">alert · appointment</text>
+  <text x="1080" y="340" text-anchor="middle" font-size="10.5" fill="#742a2a">· review</text>
+  <text x="1080" y="360" text-anchor="middle" font-size="9.5" fill="#8a4444" font-style="italic">handler per event_type</text>
+
+  <!-- DynamoDB (above coordinator) -->
+  <rect x="465" y="70" width="240" height="80" rx="10" fill="#ebf8ff" stroke="#2b6cb0" stroke-width="1.5"/>
+  <text x="585" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="#1a365d">DynamoDB</text>
+  <text x="585" y="116" text-anchor="middle" font-size="11" fill="#1a365d">medical-agent-memory</text>
+  <text x="585" y="134" text-anchor="middle" font-size="10" fill="#1a365d">patient history · 30d TTL</text>
+
+  <!-- Jev / TypeSafe (below coordinator) -->
+  <rect x="450" y="475" width="270" height="120" rx="10" fill="#faf5ff" stroke="#6b46c1" stroke-width="2"/>
+  <text x="585" y="503" text-anchor="middle" font-size="13" font-weight="700" fill="#44337a">Jev — TypeSafe AI</text>
+  <text x="585" y="520" text-anchor="middle" font-size="11" fill="#44337a">systemOne() structured decision</text>
+  <text x="585" y="540" text-anchor="middle" font-size="10.5" fill="#44337a">urgency · specialist ·</text>
+  <text x="585" y="556" text-anchor="middle" font-size="10.5" fill="#44337a">event_type · needs_event</text>
+  <text x="585" y="576" text-anchor="middle" font-size="10" fill="#6b46c1" font-style="italic">+ per-answer confidence score</text>
+
+  <!-- Deterministic backstop -->
+  <rect x="90" y="480" width="250" height="110" rx="10" fill="#f7fafc" stroke="#a0aec0" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="215" y="505" text-anchor="middle" font-size="12" font-weight="700" fill="#4a5568">Deterministic backstop</text>
+  <text x="215" y="524" text-anchor="middle" font-size="10" fill="#4a5568">glucose &gt;300 or &lt;50 mg/dL,</text>
+  <text x="215" y="540" text-anchor="middle" font-size="10" fill="#4a5568">creatinine &gt;3.0 mg/dL only</text>
+  <text x="215" y="560" text-anchor="middle" font-size="9.5" fill="#718096" font-style="italic">fires only if the Jev call itself</text>
+  <text x="215" y="574" text-anchor="middle" font-size="9.5" fill="#718096" font-style="italic">throws — never overrides a live answer</text>
+
+  <!-- Arrows: main pipeline -->
+  <line x1="200" y1="320" x2="236" y2="320" stroke="#4a5568" stroke-width="1.75" marker-end="url(#arrow)"/>
+  <line x1="430" y1="320" x2="466" y2="320" stroke="#4a5568" stroke-width="1.75" marker-end="url(#arrow)"/>
+  <line x1="700" y1="320" x2="736" y2="320" stroke="#4a5568" stroke-width="1.75" marker-end="url(#arrow)"/>
+  <line x1="930" y1="320" x2="986" y2="320" stroke="#4a5568" stroke-width="1.75" marker-end="url(#arrow)"/>
+
+  <!-- Arrows: DynamoDB <-> coordinator -->
+  <line x1="565" y1="150" x2="565" y2="241" stroke="#2b6cb0" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="500" y="195" text-anchor="middle" font-size="9.5" fill="#2b6cb0">retrieve</text>
+  <line x1="605" y1="241" x2="605" y2="150" stroke="#2b6cb0" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="670" y="195" text-anchor="middle" font-size="9.5" fill="#2b6cb0">store</text>
+
+  <!-- Arrows: coordinator <-> Jev -->
+  <line x1="565" y1="399" x2="565" y2="471" stroke="#6b46c1" stroke-width="1.75" marker-end="url(#arrowPurple)"/>
+  <text x="490" y="440" text-anchor="middle" font-size="9.5" fill="#6b46c1">decideTriage()</text>
+  <line x1="610" y1="471" x2="610" y2="399" stroke="#6b46c1" stroke-width="1.75" marker-end="url(#arrowPurple)"/>
+  <text x="695" y="440" text-anchor="middle" font-size="9.5" fill="#6b46c1">decision</text>
+
+  <!-- Arrow: Jev error -> backstop -->
+  <line x1="450" y1="530" x2="344" y2="530" stroke="#a0aec0" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arrowGray)"/>
+  <text x="397" y="520" text-anchor="middle" font-size="9" fill="#718096">on error</text>
+
+  <text x="600" y="630" text-anchor="middle" font-size="10.5" fill="#a0aec0">Full pipeline (memory + events) verified via ./test-invoke.sh and ./test-s3.sh against deployed AWS infra.</text>
+</svg>
