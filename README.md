@@ -4,7 +4,7 @@ A VoltAgent-powered medical analysis system that processes laboratory exam resul
 
 ## Architecture
 
-![System Architecture](system-arch.png)
+![System Architecture](system-arch.svg)
 
 The system follows an event-driven microservices architecture:
 
@@ -12,6 +12,11 @@ The system follows an event-driven microservices architecture:
 2. **Agent Coordinator** uses Jev (TypeSafe AI) for triage decisions and accesses **DynamoDB Memory** storage
 3. **Agent Coordinator** publishes events to **Default Event Bus** 
 4. **Event Bus** triggers downstream services like **Create Appointment** Lambda functions
+
+The deterministic backstop in `src/triage.ts` only fires if the Jev call itself
+throws (network/API error) — it never second-guesses a live Jev answer, and it
+only covers the handful of unambiguously critical thresholds, not general
+triage.
 
 ## Features
 
@@ -107,3 +112,52 @@ follows clinical protocols for:
 - **Routine Cases** (30-90 days): Normal/stable values
 
 Available specialists: endocrinologist, cardiologist, nephrologist, generalist
+
+## Why Jev for Triage
+
+Triage used to be a hardcoded glucose-only threshold check feeding a
+free-text Bedrock agent prompt: one lab value decided urgency, everything
+else was prose the caller had to parse, and there was no signal for how
+confident the "decision" actually was. `src/triage.ts` replaced that with a
+single structured call to Jev's `systemOne` API that answers urgency,
+specialist, event type, and whether an event is warranted at all — same
+shape every time, plus a confidence score per answer.
+
+To check whether that's actually working well rather than just assuming it,
+each fixture in `local-test/` was run **4 times against live Jev** and
+measured for latency and run-to-run consistency:
+
+| Fixture | Avg latency | Urgency/specialist consistent? | event_type confidence |
+|---|---|---|---|
+| `normal_glucose.json` | 296ms | ✅ 4/4 | 0.91 |
+| `high_glucose.json` | 132ms | ✅ 4/4 | 0.24 |
+| `critical_high_glucose.json` | 128ms | ✅ 4/4 | 1.00 |
+| `critical_low_glucose.json` | 185ms | ✅ 4/4 | 0.99 |
+| `sample-patient-data.json` (multiple abnormal values) | 179ms | ✅ 4/4 urgency, ❌ event_type flipped | 0.26 |
+
+**What this shows:**
+- **Latency is a non-issue.** ~100–230ms per call (one 564ms cold-start
+  outlier), well inside the Lambda's async event-driven budget — nothing is
+  waiting on this synchronously.
+- **On clear-cut cases, it's rock solid.** Urgency, specialist, and
+  `needs_event` never changed across repeated calls on any fixture,
+  including the two critical-glucose cases, where confidence sat at
+  0.98–1.00 on every question.
+- **On a genuinely ambiguous case, Jev says so instead of guessing
+  silently.** `sample-patient-data.json` has several abnormal values at
+  once with no single dominant one; its `event_type` answer flip-flopped
+  between "review" and "appointment" across identical repeated calls — and
+  that's exactly the case where Jev's own confidence score was lowest
+  (0.24–0.26 vs. 0.91–1.00 everywhere else). The old hardcoded-threshold
+  check had no way to express "I'm not sure"; it just picked something. A
+  free-text prompt would bury that same uncertainty in prose. Jev's
+  confidence score makes the ambiguity visible and machine-readable instead
+  of hidden.
+
+**Known gap:** that confidence score isn't surfaced anywhere useful yet —
+`decideTriage()` only embeds it in the free-text `reasoning` string, so
+`src/index.ts` can't act on it (e.g. defaulting `event_type` to the safer
+"review" when confidence is below some threshold). Adding a structured
+`confidence` field to `TriageDecision` would let the low-confidence case
+above be handled deliberately instead of by whichever answer Jev happened
+to land on that call.
